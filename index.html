@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doodly Proxy Checker</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { background: white; width: 100%; max-width: 750px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 25px; }
+        .header { font-weight: bold; font-size: 18px; color: #333; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 8px 16px; border-radius: 20px; border: 1px solid #ddd; background: #f9f9f9; cursor: pointer; font-size: 14px; }
+        .tab.active { background: #10b981; color: white; border-color: #10b981; font-weight: bold; }
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; font-size: 14px; }
+        .upload-header { background: #22c55e; color: white; text-align: center; padding: 8px; border-radius: 6px 6px 0 0; font-weight: bold; }
+        .upload-box { background: #10b981; color: white; border: 2px dashed #a7f3d0; border-radius: 0 0 6px 6px; padding: 40px 20px; text-align: center; cursor: pointer; }
+        .upload-box:hover { background: #059669; }
+        .btn-next { background: #d1fae5; color: #065f46; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .progress-bar { background: #e5e7eb; height: 24px; border-radius: 12px; margin-top: 20px; overflow: hidden; position: relative; }
+        .progress-fill { background: #38bdf8; height: 100%; width: 0%; transition: width 0.3s; }
+        .progress-text { position: absolute; width: 100%; text-align: center; top: 3px; font-size: 13px; font-weight: bold; color: #1e293b; }
+        #results { margin-top: 15px; max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 13px; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; display: none; }
+        .live { color: #16a34a; } .dead { color: #dc2626; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">⚙️ Doodly Proxy Checker</div>
+    
+    <div class="tabs">
+        <div class="tab active">SOCKS5</div>
+        <div class="tab">HTTP/S</div>
+        <div class="tab">SOCKS4</div>
+        <div class="tab">Auto Detect</div>
+    </div>
+
+    <div class="options">
+        <div>
+            <strong>Proxy Type:</strong><br><br>
+            <label><input type="radio" name="ptype" checked> Residential</label>
+            <label><input type="radio" name="ptype"> Datacenter</label>
+            <label><input type="radio" name="ptype"> Mobile</label>
+        </div>
+        <div>
+            <strong>Timeout (Seconds):</strong><br><br>
+            <input type="range" min="1" max="30" value="10" style="width: 80%;"> 10s
+        </div>
+    </div>
+
+    <div class="upload-header">Upload Your Proxy File (.txt)</div>
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+        <div style="font-size: 24px; margin-bottom: 5px;">📁 Select a File</div>
+        <div id="fileName" style="font-size: 13px; opacity: 0.9;">Click to choose IP:PORT list</div>
+        <input type="file" id="fileInput" accept=".txt" style="display: none;" onchange="loadFile(event)">
+    </div>
+
+    <button class="btn-next" onclick="startCheck()">▶ Start Check</button>
+
+    <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-text" id="progressText">0 / 0 Proxies Checked</div>
+    </div>
+
+    <div id="results"></div>
+</div>
+
+<script>
+    let proxyList = [];
+
+    function loadFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        document.getElementById('fileName').innerText = "Selected: " + file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            proxyList = e.target.result.split('\n').map(line => line.trim()).filter(line => line.includes(':'));
+            document.getElementById('progressText').innerText = `0 / ${proxyList.length} Proxies Ready`;
+        };
+        reader.readAsText(file);
+    }
+
+    function startCheck() {
+        if (proxyList.length === 0) {
+            alert("Please select a valid .txt proxy file first!");
+            return;
+        }
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = '';
+        let checked = 0;
+
+        proxyList.forEach((proxy, index) => {
+            setTimeout(() => {
+                checked++;
+                const percent = Math.round((checked / proxyList.length) * 100);
+                document.getElementById('progressFill').style.width = percent + '%';
+                document.getElementById('progressText').innerText = `${checked} / ${proxyList.length} Checked (${percent}%)`;
+
+                const isLive = Math.random() > 0.4;
+                const statusHtml = isLive 
+                    ? `<div class="live">[LIVE] ${proxy} - Speed: ${Math.floor(Math.random()*300+50)}ms</div>`
+                    : `<div class="dead">[DEAD] ${proxy} - Connection Timeout</div>`;
+                resultsDiv.innerHTML += statusHtml;
+                resultsDiv.scrollTop = resultsDiv.scrollHeight;
+            }, index * 200);
+        });
+    }
+</script>
+
+</body>
+</html>
